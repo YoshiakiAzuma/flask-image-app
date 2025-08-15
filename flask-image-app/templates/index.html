@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>画像ギャラリー</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>画像ギャラリー</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <button type="submit">アップロード</button>
+    </form>
+    <div class="gallery">
+        {% for img in images %}
+        <a href="{{ url_for('image_detail', filename=img, page=page) }}">
+            <img src="{{ url_for('static', filename='uploads/thumbs/' + img) }}" alt="">
+        </a>
+        {% endfor %}
+    </div>
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('index', page=page-1) }}">前へ</a>
+        {% endif %}
+        <span>{{ page }} / {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a href="{{ url_for('index', page=page+1) }}">次へ</a>
+        {% endif %}
+    </div>
+</body>
+</html>

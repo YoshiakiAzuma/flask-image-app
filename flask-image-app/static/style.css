@@ -1,0 +1,26 @@
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+.gallery img {
+    width: 200px;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.image-detail img {
+    max-width: 90%;
+    height: auto;
+    display: block;
+    margin: auto;
+}
+.back-link {
+    text-align: center;
+    margin-top: 20px;
+}
+.pagination {
+    text-align: center;
+    margin-top: 20px;
+}
