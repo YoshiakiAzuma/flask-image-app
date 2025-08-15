@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>画像表示</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="image-detail">
+        <img src="{{ url_for('static', filename='uploads/' + filename) }}" alt="">
+    </div>
+    <div class="back-link">
+        <a href="{{ url_for('index', page=page) }}">← 戻る</a>
+    </div>
+</body>
+</html>

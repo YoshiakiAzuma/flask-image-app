@@ -2,33 +2,30 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>画像アップロード</title>
+    <title>画像ギャラリー</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>📷 画像アップロードサイト</h1>
-
-     <!-- 投稿フォーム -->
-    <form action="/upload" method="post" enctype="multipart/form-data" class="upload-form">
+    <h1>画像ギャラリー</h1>
+    <form method="post" enctype="multipart/form-data">
         <input type="file" name="file" required>
-        <input type="text" name="comment" placeholder="コメントを入力">
         <button type="submit">アップロード</button>
     </form>
-
-
-        <hr>
-
-        <!-- 投稿一覧 -->
-        {% for post in posts %}
-        <div class="post">
-            <img src="{{ url_for('static', filename='uploads/' + post[1]) }}" alt="投稿画像">
-            <p>{{ post[2] }}</p>
-            <form action="/delete/{{ post[0] }}" method="post" class="delete-form">
-                <button type="submit">🗑 削除</button>
-            </form>
-        </div>
+    <div class="gallery">
+        {% for img in images %}
+        <a href="{{ url_for('image_detail', filename=img, page=page) }}">
+            <img src="{{ url_for('static', filename='uploads/thumbs/' + img) }}" alt="">
+        </a>
         {% endfor %}
+    </div>
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('index', page=page-1) }}">前へ</a>
+        {% endif %}
+        <span>{{ page }} / {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a href="{{ url_for('index', page=page+1) }}">次へ</a>
+        {% endif %}
     </div>
 </body>
 </html>

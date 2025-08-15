@@ -1,70 +1,50 @@
+from flask import Flask, render_template, request, redirect, url_for
 import os
-import sqlite3
-from flask import Flask, request, redirect, url_for, render_template, send_from_directory
+from werkzeug.utils import secure_filename
+from PIL import Image
+import math
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'static/uploads/'
+app.config['THUMB_FOLDER'] = 'static/uploads/thumbs/'
+PER_PAGE = 40
 
-UPLOAD_FOLDER = 'static/uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['THUMB_FOLDER'], exist_ok=True)
 
-DB_FILE = 'posts.db'
+def create_thumbnail(image_path, thumb_path):
+    img = Image.open(image_path)
+    img.thumbnail((200, 200))
+    img.save(thumb_path)
 
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS posts (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    filename TEXT NOT NULL,
-                    comment TEXT
-                )''')
-    conn.commit()
-    conn.close()
-
-init_db()
-
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT id, filename, comment FROM posts ORDER BY id DESC")
-    posts = c.fetchall()
-    conn.close()
-    return render_template('index.html', posts=posts)
+    if request.method == 'POST':
+        file = request.files['file']
+        if file:
+            filename = secure_filename(file.filename)
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(save_path)
 
-@app.route('/upload', methods=['POST'])
-def upload():
-    file = request.files['file']
-    comment = request.form['comment']
-    if file.filename != '':
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        file.save(filepath)
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute("INSERT INTO posts (filename, comment) VALUES (?, ?)", (file.filename, comment))
-        conn.commit()
-        conn.close()
-    return redirect(url_for('index'))
+            thumb_path = os.path.join(app.config['THUMB_FOLDER'], filename)
+            create_thumbnail(save_path, thumb_path)
 
-@app.route('/delete/<int:post_id>', methods=['POST'])
-def delete(post_id):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT filename FROM posts WHERE id=?", (post_id,))
-    row = c.fetchone()
-    if row:
-        filename = row[0]
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        if os.path.exists(filepath):
-            os.remove(filepath)
-        c.execute("DELETE FROM posts WHERE id=?", (post_id,))
-        conn.commit()
-    conn.close()
-    return redirect(url_for('index'))
+            return redirect(url_for('index'))
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    page = int(request.args.get('page', 1))
+    images = sorted(os.listdir(app.config['THUMB_FOLDER']))
+    total_pages = math.ceil(len(images) / PER_PAGE)
+
+    start = (page - 1) * PER_PAGE
+    end = start + PER_PAGE
+    images_paginated = images[start:end]
+
+    return render_template('index.html', images=images_paginated, page=page, total_pages=total_pages)
+
+@app.route('/image/<filename>')
+def image_detail(filename):
+    page = request.args.get('page', 1)
+    return render_template('detail.html', filename=filename, page=page)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000)
