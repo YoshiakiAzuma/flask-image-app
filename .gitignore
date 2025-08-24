@@ -1,0 +1,6 @@
+# uploaded files
+static/uploads/*
+!static/uploads/.gitkeep
+
+# local db
+posts.db
