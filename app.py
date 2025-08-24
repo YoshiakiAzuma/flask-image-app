@@ -30,6 +30,24 @@ init_db()
 def index():
     if request.method == 'POST':
         return upload()  # 誤って / にPOSTしても動く
+    
+    # 投稿削除
+@app.route('/delete/<int:post_id>', methods=['POST'])
+def delete(post_id):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT filename FROM posts WHERE id=?", (post_id,))
+    row = c.fetchone()
+    if row:
+        filename = row[0]
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if os.path.exists(filepath):
+            os.remove(filepath)   # 画像ファイル削除
+        c.execute("DELETE FROM posts WHERE id=?", (post_id,))
+        conn.commit()
+    conn.close()
+    return redirect(url_for('index'))
+
 
     page = request.args.get('page', 1, type=int)
     offset = (page - 1) * PER_PAGE

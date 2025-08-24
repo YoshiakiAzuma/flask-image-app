@@ -50,7 +50,11 @@
                data-bs-toggle="modal">
           <div class="card-body p-2">
             <p class="card-text small">{{ image[2] }}</p>
+            <form action="{{ url_for('delete', post_id=image[0]) }}" method="post" class="mt-1">
+              <button type="submit" class="btn btn-sm btn-danger w-100">🗑 削除</button>
+            </form>
           </div>
+
         </div>
       </div>
       {% endfor %}
