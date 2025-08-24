@@ -25,42 +25,34 @@ def init_db():
 
 init_db()
 
-# 一覧（GET）＋ 保険でPOSTも受ける（/ に POST してもOKにする）
-@app.route('/', methods=['GET', 'POST'])
+# ヘルスチェック（Render向け）
+@app.route('/healthz', methods=['GET', 'HEAD'])
+def healthz():
+    return ('ok', 200)
+
+# 一覧（GET/POST/HEAD）
+@app.route('/', methods=['GET', 'POST', 'HEAD'])
 def index():
+    # Renderのヘルスチェック対策：HEADは即200を返す
+    if request.method == 'HEAD':
+        return ('', 200)
+
     if request.method == 'POST':
         return upload()  # 誤って / にPOSTしても動く
-    
-    # 投稿削除
-@app.route('/delete/<int:post_id>', methods=['POST'])
-def delete(post_id):
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("SELECT filename FROM posts WHERE id=?", (post_id,))
-    row = c.fetchone()
-    if row:
-        filename = row[0]
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        if os.path.exists(filepath):
-            os.remove(filepath)   # 画像ファイル削除
-        c.execute("DELETE FROM posts WHERE id=?", (post_id,))
-        conn.commit()
-    conn.close()
-    return redirect(url_for('index'))
-
 
     page = request.args.get('page', 1, type=int)
     offset = (page - 1) * PER_PAGE
 
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
+    # 次ページ判定のため +1 件
     c.execute('SELECT id, filename, comment FROM posts ORDER BY id DESC LIMIT ? OFFSET ?',
-              (PER_PAGE + 1, offset))  # 次ページ判定のため +1 件
+              (PER_PAGE + 1, offset))
     rows = c.fetchall()
     conn.close()
 
     has_next = len(rows) > PER_PAGE
-    images = rows[:PER_PAGE]  # templateでは image[1]=filename, image[2]=comment を参照
+    images = rows[:PER_PAGE]  # templateでは image[1]=filename, image[2]=comment
 
     return render_template('index.html', images=images, page=page, has_next=has_next)
 
@@ -89,5 +81,6 @@ def uploaded_file(filename):
 
 # Render対応
 if __name__ == '__main__':
+    # 本番ではGunicornを推奨だが、まずはこのままでも可
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
